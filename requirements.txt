@@ -1,0 +1,6 @@
+# Minimal Python dependencies for this project
+# Install with: pip install -r requirements.txt
+
+numpy
+matplotlib
+scipy
