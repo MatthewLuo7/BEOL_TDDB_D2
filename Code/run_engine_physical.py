@@ -3,7 +3,9 @@
 
 Usage examples:
   python Code/run_engine.py --lot 1 --wafer 2
-  python Code/run_engine.py --lot 1 --all
+    python Code/run_engine.py --lot 1 --all --model verified
+    python Code/run_engine.py --lot 1 --all --model 1e_v2
+    python Code/run_engine.py --lot 1 --all --model sqrt_e
   python Code/run_engine.py --all-lots
 """
 from pathlib import Path
@@ -13,7 +15,7 @@ import argparse
 code_dir = Path(__file__).resolve().parent
 sys.path.insert(0, str(code_dir))
 
-import Wafer_Mapping_Single_Structure as wms
+import Code.Wafer_Mapping_Single_Structure_physical as wms
 import numpy as np
 
 
@@ -98,8 +100,16 @@ def main():
     parser.add_argument('--wafer', '-w', type=int, help='Wafer number (integer). If omitted and --all not set, defaults to 1')
     parser.add_argument('--all', action='store_true', help='Process all wafers in the lot')
     parser.add_argument('--all-lots', action='store_true', help='Process all lots found under data/')
+    parser.add_argument(
+        '--model',
+        choices=wms.get_physics_model_names(),
+        default='verified',
+        help='Unit-level physics model to use: verified, 1e_v2, or sqrt_e',
+    )
 
     args = parser.parse_args()
+    wms.set_physics_model(args.model)
+    print(f'Using physics model: {args.model}')
 
     if args.all_lots:
         lots = wms.iter_lot_numbers()
