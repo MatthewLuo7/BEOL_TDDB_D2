@@ -5,13 +5,56 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm, ListedColormap
 from Global_Params import T_TARGET, F_TARGET, S_MAX, S_MIN
 
-from VERIFIED_Unit_Level_DPM_Based import calc_eta_tBD, calc_beta_tBD
+import VERIFIED_Unit_Level_DPM_Based as verified_model
+import Unit_Level_1_over_E_V2 as one_over_e_model
+import Unit_Level_sqrt_E as sqrt_e_model
 
 DATA_ROOT = Path(__file__).resolve().parents[1] / "data"
 OUTPUT_ROOT = Path(__file__).resolve().parents[1] / "output"
 
 DEBUG_POINTS_XY = [(12, 12), (18, 18)]
 CMAP_NAME_LOOKUP = {name.lower(): name for name in plt.colormaps()}
+
+PHYSICS_MODELS = {
+    'verified': verified_model,
+    '1e_v2': one_over_e_model,
+    'sqrt_e': sqrt_e_model,
+}
+
+ACTIVE_MODEL_NAME = 'verified'
+calc_eta_tBD = verified_model.calc_eta_tBD
+calc_beta_tBD = verified_model.calc_beta_tBD
+
+
+def set_physics_model(model_name):
+    """Selects which unit-level physics model is used by the wafer mapper."""
+    normalized = model_name.strip().lower()
+    aliases = {
+        'verified': 'verified',
+        'verfied': 'verified',
+        '1e': '1e_v2',
+        '1/e': '1e_v2',
+        '1e_v2': '1e_v2',
+        'sqrt': 'sqrt_e',
+        'sqrt(e)': 'sqrt_e',
+        'sqrt_e': 'sqrt_e',
+    }
+    resolved_name = aliases.get(normalized, normalized)
+    if resolved_name not in PHYSICS_MODELS:
+        available = ', '.join(sorted(PHYSICS_MODELS))
+        raise ValueError(f"Unknown physics model '{model_name}'. Available: {available}")
+
+    model = PHYSICS_MODELS[resolved_name]
+    global ACTIVE_MODEL_NAME, calc_eta_tBD, calc_beta_tBD
+    ACTIVE_MODEL_NAME = resolved_name
+    calc_eta_tBD = model.calc_eta_tBD
+    calc_beta_tBD = model.calc_beta_tBD
+    return ACTIVE_MODEL_NAME
+
+
+def get_physics_model_names():
+    """Returns the selectable physics model names."""
+    return tuple(sorted(PHYSICS_MODELS))
 
 # Categorical palettes tuned for clearer, less saturated dominance/classification plots.
 DOMINANCE_CMAP = ListedColormap([
@@ -312,6 +355,7 @@ def save_2x3_map_figure(output_path, wafer_name, maps, existence_matrix=None):
     plt.close(fig)
 
 if __name__ == "__main__":
+    print(f"Using physics model: {ACTIVE_MODEL_NAME}")
 
     print("Loading data...")
     lot_numbers = iter_lot_numbers()
