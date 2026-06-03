@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm, ListedColormap
 
 from Global_Params import T_TARGET, F_TARGET, S_MAX
-from VERIFIED_Unit_Level_DPM_Based import calc_eta_tBD, calc_beta_tBD
+from local_percolation_gpr.model import calc_beta_eta
 
 DATA_ROOT = Path(__file__).resolve().parents[1] / "data"
 OUTPUT_ROOT = Path(__file__).resolve().parents[1] / "output"
@@ -88,8 +88,9 @@ def _compute_eta_beta(spacing_matrix):
             if spacing <= 0:
                 continue
             if spacing <= S_MAX:
-                eta[row_index, col_index] = calc_eta_tBD(spacing)
-                beta[row_index, col_index] = calc_beta_tBD(spacing)
+                b, e = calc_beta_eta(spacing)
+                eta[row_index, col_index] = b
+                beta[row_index, col_index] = e
             else:
                 eta[row_index, col_index] = np.nan
                 beta[row_index, col_index] = np.nan

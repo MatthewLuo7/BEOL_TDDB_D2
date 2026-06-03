@@ -19,7 +19,7 @@ import Code.Wafer_Mapping_Single_Structure_physical as wms
 import numpy as np
 
 
-def process_wafer(lot_number: int, wafer_number: int):
+def process_wafer(wms, lot_number: int, wafer_number: int):
     wafer_name = f"wafer_{wafer_number:02d}"
     print(f"Processing lot_{lot_number:03d}/{wafer_name}...")
     dataset = wms.load_data(lot_number=lot_number, wafer_number=wafer_number)
@@ -84,7 +84,7 @@ def process_wafer(lot_number: int, wafer_number: int):
     print(f"Saved outputs to {wafer_output_root}")
 
 
-def process_lot(lot_number: int):
+def process_lot(wms, lot_number: int):
     wafer_paths = wms.iter_wafer_folders(lot_number)
     if not wafer_paths:
         print(f"No wafer folders found for lot_{lot_number:03d}")
@@ -107,9 +107,18 @@ def main():
         help='Unit-level physics model to use: verified, 1e_v2, or sqrt_e',
     )
 
+    parser.add_argument('--local-percolation-gpr', action='store_true')
+
     args = parser.parse_args()
     wms.set_physics_model(args.model)
     print(f'Using physics model: {args.model}')
+
+    if args.local_percolation_gpr:
+        import Wafer_Mapping_Single_Structure_Via_DPM_Only as wms
+    else:
+        import types
+        sys.modules["exp"] = types.ModuleType("exp")
+        import Wafer_Mapping_Single_Structure as wms
 
     if args.all_lots:
         lots = wms.iter_lot_numbers()
@@ -124,10 +133,10 @@ def main():
         parser.error('Either --lot or --all-lots must be provided')
 
     if args.all:
-        process_lot(args.lot)
+        process_lot(wms, args.lot)
     else:
         wafer_num = args.wafer if args.wafer is not None else 1
-        process_wafer(args.lot, wafer_num)
+        process_wafer(wms, args.lot, wafer_num)
 
 
 if __name__ == '__main__':
